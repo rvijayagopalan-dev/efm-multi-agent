@@ -2,99 +2,38 @@
 
 | Property | Value |
 |---|---|
-| **ID** | \$(System.Collections.Hashtable.id)\ |
+| **ID** | `container-orchestration` |
 | **Group** | core-technical |
-| **Icon** | 📦 |
-| **Expertise** | Kubernetes, Operators, Helm, ArgoCD, RBAC |
+| **Expertise** | Kubernetes, Helm |
 
 ---
 
 ## System Prompt
 
-This agent is defined in \lib/agents.ts\ with a specialised system prompt that establishes:
+This agent is defined in lib/agents.ts with a specialised system prompt.
 
 - **Role:** World-class enterprise specialist in this domain
-- **Expertise:** Deep knowledge of standards (TOGAF, NIST, ISO, BIZBOK, etc.)
-- **Responsibilities:** Clear objectives aligned with this domain
-- **Outputs:** Structured deliverables (assessments, designs, governance models, roadmaps)
-- **Format:** Markdown with clear headings, tables, and bullet points
-
-The full system prompt is generated from the \gentPrompt()\ function in \lib/agents.ts\.
+- **Expertise:** Deep knowledge of standards (TOGAF, NIST, ISO, BIZBOK)
+- **Responsibilities:** Domain-specific objectives and deliverables
+- **Format:** Markdown with clear headings and actionable output
 
 ---
 
-## Domain Expertise
+## Domain Focus
 
-**Focus Area:** Kubernetes, Operators, Helm, ArgoCD, RBAC
-
-This agent brings deep knowledge of:
-- Industry standards and best practices
-- Technology patterns and trade-offs
-- Governance and compliance frameworks
-- Implementation strategies and roadmaps
+Kubernetes, Helm
 
 ---
 
 ## Standard Tools
 
-Every agent has access to these base tools:
-
-| Tool | Purpose |
-|---|---|
-| \ssess_current_state\ | Assess current state in this domain |
-| \design_target_architecture\ | Design target architecture with components |
-| \create_governance_model\ | Create governance with controls & standards |
-| \uild_roadmap\ | Build phased implementation roadmap |
-
-**Domain-specific tools** may be added for specialised agents.
+- `assess_current_state` — Assess domain state in your organization
+- `design_target_architecture` — Design target architecture
+- `create_governance_model` — Define governance and controls
+- `build_roadmap` — Create phased implementation plan
 
 ---
 
-## Invocation
-
-This agent is invoked by the **Orchestrator** when your request requires expertise in this domain.
-
-**Typical invocation:**
-`
-Orchestrator: "This request needs expertise in Kubernetes, Operators, Helm, ArgoCD, RBAC"
-Tool: invoke_container_orchestration_agent
-Task: [Specific task description]
-Context: [Relevant context from prior agents]
-`
-
----
-
-## Standards & Frameworks
-
-Depending on the domain, this agent references:
-
-- **TOGAF 10** — Enterprise architecture framework
-- **NIST AI RMF** — AI Risk Management Framework (for AI agents)
-- **ISO 27001/27002** — Information security
-- **ISO 42001** — AI Management (for AI agents)
-- **BIZBOK** — Business Architecture guide
-- **DAMA-DMBOK** — Data management body of knowledge
-- **Google SRE Book** — Site reliability engineering
-- **OWASP** — Application security
-
----
-
-## Related Agents
-
-**Part of EFM Agentic AI:** A 41-agent system where each agent is a specialist.
-
-Other agents in the **core-technical** group may collaborate on comprehensive responses.
-
----
-
-## Implementation Notes
-
-- Agent is implemented in TypeScript using Anthropic Claude Sonnet 4.6
-- Streaming output is real-time token-by-token
-- Session memory carries context across conversation turns
-- Outputs are Markdown-formatted for readability and exportability
-
----
-
-**Generated:** 2026-06-05  
 **System:** EFM Agentic AI (v0.1)
+**Generated:** 2026-06-05
+

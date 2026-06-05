@@ -371,19 +371,28 @@ export default function AgentWorkspace() {
             return (
               <div key={group.id} className="mb-1">
                 {/* Group header with toggle */}
-                <button
-                  onClick={() => setCollapsedGroups(prev => ({ ...prev, [group.id]: !isCollapsed }))}
-                  className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-slate-700/30 transition-colors rounded-md group/header"
-                >
-                  <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                <div className="flex items-center gap-1 px-3 py-1.5 hover:bg-slate-700/30 transition-colors rounded-md group/header">
+                  <button
+                    onClick={() => setCollapsedGroups(prev => ({ ...prev, [group.id]: !isCollapsed }))}
+                    className="flex items-center gap-1.5 flex-1 min-w-0"
+                  >
                     <span className="text-slate-500 text-xs transition-transform">{isCollapsed ? '▶' : '▼'}</span>
                     <span className="text-[9px] font-bold text-slate-600 uppercase tracking-widest truncate">{group.label}</span>
                     {groupAgents.length > 0 && (
                       <span className="text-[9px] text-slate-700 flex-shrink-0">({groupAgents.length})</span>
                     )}
-                  </div>
+                  </button>
+                  <a
+                    href="/academy"
+                    className="text-slate-500 hover:text-blue-400 transition-colors opacity-0 group-hover/header:opacity-100 flex-shrink-0"
+                    title="Learning Academy"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C6.5 6.253 2 10.998 2 17s4.5 10.747 10 10.747c5.5 0 10-4.998 10-10.747 0-5.002-4.5-9.747-10-10.747z" />
+                    </svg>
+                  </a>
                   {(groupActiveCount > 0 || groupDoneCount > 0) && (
-                    <div className="flex items-center gap-1 flex-shrink-0 ml-1">
+                    <div className="flex items-center gap-1 flex-shrink-0">
                       {groupActiveCount > 0 && (
                         <span className="flex items-center gap-0.5 text-[9px] text-orange-400">
                           <span className="relative flex h-1 w-1">
@@ -398,7 +407,7 @@ export default function AgentWorkspace() {
                       )}
                     </div>
                   )}
-                </button>
+                </div>
 
                 {/* Group agents (conditionally rendered) */}
                 {!isCollapsed && groupAgents.map(agent => {
@@ -406,7 +415,7 @@ export default function AgentWorkspace() {
                 const gc = GROUP_COLORS[agent.groupId] ?? '';
                 return (
                   <div key={agent.id}
-                    className={`flex items-center gap-2 px-3 py-1.5 transition-colors ${
+                    className={`flex items-center gap-2 px-3 py-1.5 transition-colors group/agent ${
                       status === 'active' ? 'bg-orange-500/10' :
                       status === 'done'   ? 'bg-emerald-500/5' : ''
                     }`}>
@@ -432,7 +441,18 @@ export default function AgentWorkspace() {
                     }`}>
                       {agent.name.replace(' Agent', '').replace(' Architecture', '').replace(' Excellence', '')}
                     </span>
-                    <span className="ml-auto text-base leading-none flex-shrink-0">{agent.icon}</span>
+                    <a
+                      href={`/academy/${agent.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-auto text-slate-500 hover:text-blue-400 transition-colors opacity-0 group-hover/agent:opacity-100"
+                      title={`Learn more about ${agent.name}`}
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                    </a>
+                    <span className="text-base leading-none flex-shrink-0">{agent.icon}</span>
                   </div>
                 );
                 })}
