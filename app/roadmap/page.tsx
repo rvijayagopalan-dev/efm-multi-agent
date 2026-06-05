@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { ENTERPRISE_OS_ROADMAP, MATURITY_LEVELS, ANNUAL_METRICS, TOTAL_SYSTEM_ESTIMATE } from '@/lib/roadmap';
+import { AGENT_DETAILS } from '@/lib/agent-details';
 
 export default function RoadmapPage() {
   const [expandedPhase, setExpandedPhase] = useState<string | null>(null);
   const [view, setView] = useState<'timeline' | 'estimate' | 'maturity' | 'agents'>('timeline');
   const [agentFilter, setAgentFilter] = useState<'all' | 'sdlc' | 'togaf' | 'enterprise'>('all');
+  const [expandedAgent, setExpandedAgent] = useState<string | null>(null);
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
@@ -66,7 +68,7 @@ export default function RoadmapPage() {
         {view === 'timeline' && <TimelineView expandedPhase={expandedPhase} setExpandedPhase={setExpandedPhase} />}
         {view === 'estimate' && <EstimateView />}
         {view === 'maturity' && <MaturityView />}
-        {view === 'agents' && <AgentsView filter={agentFilter} setFilter={setAgentFilter} />}
+        {view === 'agents' && <AgentsView filter={agentFilter} setFilter={setAgentFilter} expandedAgent={expandedAgent} setExpandedAgent={setExpandedAgent} />}
       </main>
     </div>
   );
@@ -406,7 +408,7 @@ function MaturityView() {
   );
 }
 
-function AgentsView({ filter, setFilter }: { filter: 'all' | 'sdlc' | 'togaf' | 'enterprise'; setFilter: (f: 'all' | 'sdlc' | 'togaf' | 'enterprise') => void }) {
+function AgentsView({ filter, setFilter, expandedAgent, setExpandedAgent }: { filter: 'all' | 'sdlc' | 'togaf' | 'enterprise'; setFilter: (f: 'all' | 'sdlc' | 'togaf' | 'enterprise') => void; expandedAgent: string | null; setExpandedAgent: (id: string | null) => void }) {
   const sdlcAgents = ENTERPRISE_OS_ROADMAP.slice(0, 6).flatMap(p => p.agents.filter(a => a.category === 'SDLC'));
   const togafAgents = ENTERPRISE_OS_ROADMAP.slice(6).flatMap(p => p.agents.filter(a => a.category === 'TOGAF'));
 
@@ -577,26 +579,74 @@ function AgentsView({ filter, setFilter }: { filter: 'all' | 'sdlc' | 'togaf' | 
           };
 
           const category = agent.category === 'SDLC' ? 'SDLC' : agent.category === 'TOGAF' ? 'TOGAF' : 'Enterprise';
+          const isExpanded = expandedAgent === agent.id;
+          const agentDetail = AGENT_DETAILS.find(d => d.id === agent.id);
 
           return (
             <div
               key={idx}
-              className={`p-4 rounded-lg border ${categoryBgColor[category]}`}
+              className={`rounded-lg border transition-all ${categoryBgColor[category]} overflow-hidden`}
             >
-              <div className="flex items-start justify-between mb-2">
-                <h3 className="text-sm font-bold text-white flex-1 pr-2">{agent.name}</h3>
-                <span className={`text-xs px-2 py-1 rounded whitespace-nowrap ${categoryTextColor[category]}`}>
-                  {category}
-                </span>
-              </div>
-              {agent.autonomyLevel && (
-                <div className="text-xs text-slate-400 mb-2">
-                  Autonomy: <span className="text-slate-300 font-semibold">{agent.autonomyLevel}</span>
+              {/* Header - Always Visible */}
+              <button
+                onClick={() => setExpandedAgent(isExpanded ? null : agent.id)}
+                className="w-full p-4 text-left hover:bg-slate-800/20 transition-colors"
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <h3 className="text-sm font-bold text-white flex-1 pr-2">{agent.name}</h3>
+                  <span className={`text-xs px-2 py-1 rounded whitespace-nowrap ${categoryTextColor[category]}`}>
+                    {category}
+                  </span>
                 </div>
-              )}
-              {agent.type && (
-                <div className="text-xs text-slate-400">
-                  Type: <span className="text-slate-300 font-semibold">{agent.type}</span>
+                {agent.autonomyLevel && (
+                  <div className="text-xs text-slate-400 mb-1">
+                    Autonomy: <span className="text-slate-300 font-semibold">{agent.autonomyLevel}</span>
+                  </div>
+                )}
+                {agent.type && (
+                  <div className="text-xs text-slate-400 mb-2">
+                    Type: <span className="text-slate-300 font-semibold">{agent.type}</span>
+                  </div>
+                )}
+                <div className="text-xs text-slate-500 flex items-center gap-1">
+                  <span className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`}>▼</span>
+                  <span>{isExpanded ? 'Hide' : 'Show'} details</span>
+                </div>
+              </button>
+
+              {/* Expanded Details */}
+              {isExpanded && agentDetail && (
+                <div className="border-t border-slate-700 px-4 py-4 space-y-3">
+                  {/* Role */}
+                  <div>
+                    <h4 className="text-xs font-semibold text-slate-300 mb-1 uppercase tracking-wider">Role</h4>
+                    <p className="text-xs text-slate-300">{agentDetail.role}</p>
+                  </div>
+
+                  {/* Responsibilities */}
+                  <div>
+                    <h4 className="text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wider">Responsibilities</h4>
+                    <ul className="space-y-1">
+                      {agentDetail.responsibilities.map((resp, ridx) => (
+                        <li key={ridx} className="text-xs text-slate-400 flex items-start gap-2">
+                          <span className="text-slate-600 mt-1">•</span>
+                          <span>{resp}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Key Outputs */}
+                  <div>
+                    <h4 className="text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wider">Key Outputs</h4>
+                    <div className="flex flex-wrap gap-1">
+                      {agentDetail.keyOutputs.map((output, oidx) => (
+                        <span key={oidx} className="text-xs bg-slate-700/50 text-slate-200 px-2 py-1 rounded">
+                          {output}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

@@ -3,6 +3,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useRef, useCallback } from 'react';
 import { AGENT_DEFINITIONS, AGENT_GROUPS_META } from '@/lib/agents';
+import { AGENT_DETAILS, type AgentDetail } from '@/lib/agent-details';
 import { ACADEMY_SECTIONS, SECTION_COLORS, type AcademySection } from '@/lib/academy-sections';
 
 type SectionState = 'idle' | 'generating' | 'done' | 'error';
@@ -11,8 +12,19 @@ export default function AgentAcademyPage() {
   const params = useParams();
   const router = useRouter();
   const agentId = params.agentId as string;
-  const agent = AGENT_DEFINITIONS.find(a => a.id === agentId);
-  const group = agent ? AGENT_GROUPS_META.find(g => g.id === agent.groupId) : null;
+
+  // Try to find agent in AGENT_DETAILS first (114 agents), fallback to AGENT_DEFINITIONS (49 agents)
+  const agent = AGENT_DETAILS.find(a => a.id === agentId) || AGENT_DEFINITIONS.find(a => a.id === agentId);
+
+  // Get group from AGENT_GROUPS_META if available, otherwise derive from category
+  const categoryGroupMap: Record<string, string> = {
+    'SDLC': 'sdlc',
+    'TOGAF': 'togaf',
+    'Enterprise': 'enterprise'
+  };
+  const agentDetail = AGENT_DETAILS.find(a => a.id === agentId);
+  const groupId = (agent as any)?.groupId || (agentDetail ? categoryGroupMap[agentDetail.category] : undefined);
+  const group = groupId ? AGENT_GROUPS_META.find(g => g.id === groupId) : null;
 
   const [activeSection, setActiveSection] = useState<string>(ACADEMY_SECTIONS[0].id);
   const [content, setContent] = useState<Record<string, string>>({});
@@ -181,7 +193,7 @@ export default function AgentAcademyPage() {
             <span className="text-slate-500 text-sm hidden sm:block">{group?.label}</span>
             <span className="text-slate-700 hidden sm:block">/</span>
             <div className="flex items-center gap-2 min-w-0">
-              <span className="text-lg leading-none flex-shrink-0">{agent.icon}</span>
+              <span className="text-lg leading-none flex-shrink-0">{(agent as any).icon || '📚'}</span>
               <span className="text-sm font-semibold text-white truncate">{agent.name}</span>
             </div>
           </div>
@@ -216,13 +228,13 @@ export default function AgentAcademyPage() {
           {/* Agent hero */}
           <div className="p-4 border-b border-slate-800">
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-2xl">{agent.icon}</span>
+              <span className="text-2xl">{(agent as any).icon || '📚'}</span>
               <div>
                 <p className="text-xs font-bold text-white leading-tight">{agent.name}</p>
                 <p className="text-[10px] text-slate-500 leading-tight mt-0.5">Learning Academy</p>
               </div>
             </div>
-            <p className="text-[10px] text-slate-600 leading-snug mt-2">{agent.expertise}</p>
+            <p className="text-[10px] text-slate-600 leading-snug mt-2">{(agent as any).expertise || (agent as AgentDetail).role}</p>
           </div>
 
           {/* Progress bar */}

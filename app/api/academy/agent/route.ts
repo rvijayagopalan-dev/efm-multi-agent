@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { AGENT_DEFINITIONS } from '@/lib/agents';
+import { AGENT_DETAILS } from '@/lib/agent-details';
 import { buildAcademyPrompt } from '@/lib/academy-sections';
 import { loadSectionContent } from '@/lib/academy-content-loader';
 import fs from 'fs';
@@ -13,7 +14,7 @@ export async function POST(req: Request) {
     sectionId: string;
   };
 
-  const agent = AGENT_DEFINITIONS.find(a => a.id === agentId);
+  const agent = AGENT_DETAILS.find(a => a.id === agentId) || AGENT_DEFINITIONS.find(a => a.id === agentId);
   if (!agent) {
     return new Response(
       JSON.stringify({ error: 'Agent not found' }),
@@ -37,7 +38,8 @@ export async function POST(req: Request) {
     }
 
     // If no pre-generated content, generate new content
-    const systemPrompt = buildAcademyPrompt(agent.name, agent.expertise, sectionId);
+    const expertise = (agent as any).expertise || (agent as any).role || agent.name;
+    const systemPrompt = buildAcademyPrompt(agent.name, expertise, sectionId);
 
     const stream = await client.messages.stream({
       model: 'claude-sonnet-4-6',

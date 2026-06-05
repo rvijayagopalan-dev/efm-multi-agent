@@ -47,6 +47,8 @@ const GROUP_COLORS: Record<string, string> = {
 
 export default function AgentWorkspace() {
   const [request, setRequest]         = useState('');
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string>('');
   const [running, setRunning]         = useState(false);
   const [log, setLog]                 = useState<LogEntry[]>([]);
   const [agentStatuses, setAgentStatuses] = useState<Record<string, AgentStatus>>({});
@@ -66,6 +68,7 @@ export default function AgentWorkspace() {
 
   const logRef    = useRef<HTMLDivElement>(null);
   const outputRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const abortRef  = useRef<AbortController | null>(null);
   const metricsRef = useRef<ObservabilityCollector | null>(null);
   const entryCounter = useRef(0);
@@ -85,6 +88,38 @@ export default function AgentWorkspace() {
   useEffect(() => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
   }, [log]);
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      addLog({ type: 'error', content: 'File size must be less than 10MB' });
+      return;
+    }
+
+    setUploadedFile(file);
+
+    // Create preview for images
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setFilePreview(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setFilePreview('');
+    }
+  }, [addLog]);
+
+  const removeFile = useCallback(() => {
+    setUploadedFile(null);
+    setFilePreview('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, []);
 
   const run = useCallback(async () => {
     if (!request.trim() || running) return;
@@ -109,10 +144,16 @@ export default function AgentWorkspace() {
     let synthesisId = '';
 
     try {
+      const formData = new FormData();
+      formData.append('request', request);
+      formData.append('history', JSON.stringify(history));
+      if (uploadedFile) {
+        formData.append('file', uploadedFile);
+      }
+
       const res = await fetch('/api/orchestrate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ request, history }),
+        body: formData,
         signal: abortRef.current.signal,
       });
 
@@ -483,7 +524,41 @@ export default function AgentWorkspace() {
                   {ex}
                 </button>
               ))}
+              <input
+                ref={fileInputRef}
+                type="file"
+                onChange={handleFileSelect}
+                accept="image/*,.pdf,.doc,.docx,.txt,.json,.csv"
+                className="hidden"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="text-[10px] px-2.5 py-1 bg-slate-800 border border-slate-700 hover:border-cyan-500/40 text-slate-500 hover:text-cyan-400 rounded-lg transition-all flex items-center gap-1"
+              >
+                <span>📎</span>
+                <span>Attach File</span>
+              </button>
             </div>
+            {uploadedFile && (
+              <div className="flex items-center gap-2 bg-slate-800/50 border border-slate-700/50 rounded-lg px-3 py-2">
+                <span className="text-xs">📄</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-slate-300 truncate">{uploadedFile.name}</p>
+                  <p className="text-[10px] text-slate-500">{(uploadedFile.size / 1024).toFixed(1)} KB</p>
+                </div>
+                <button
+                  onClick={removeFile}
+                  className="text-xs px-2 py-1 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+            {filePreview && (
+              <div className="relative w-full max-h-32 rounded-lg overflow-hidden border border-slate-700">
+                <img src={filePreview} alt="Preview" className="w-full h-full object-cover" />
+              </div>
+            )}
           </div>
           <div className="flex flex-col gap-2 flex-shrink-0">
             {running

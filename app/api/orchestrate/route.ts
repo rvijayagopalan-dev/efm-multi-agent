@@ -12,10 +12,40 @@ import { AGENT_MAP } from '@/lib/agents';
 const client = new Anthropic();
 
 export async function POST(req: Request) {
-  const { request, history = [] } = await req.json() as {
-    request: string;
-    history: ConversationTurn[];
-  };
+  let request: string;
+  let history: ConversationTurn[] = [];
+  let fileContent: string | null = null;
+  let fileName: string | null = null;
+
+  // Handle FormData (with file upload) or JSON
+  const contentType = req.headers.get('content-type') || '';
+
+  if (contentType.includes('multipart/form-data')) {
+    const formData = await req.formData();
+    request = formData.get('request') as string;
+    const historyStr = formData.get('history') as string;
+    history = historyStr ? JSON.parse(historyStr) : [];
+
+    const file = formData.get('file') as File | null;
+    if (file) {
+      fileName = file.name;
+      const buffer = await file.arrayBuffer();
+      const text = new TextDecoder().decode(buffer);
+      fileContent = text;
+    }
+  } else {
+    const body = await req.json() as {
+      request: string;
+      history?: ConversationTurn[];
+    };
+    request = body.request;
+    history = body.history || [];
+  }
+
+  // Append file content to request if a file was uploaded
+  const fullRequest = fileContent
+    ? `${request}\n\n--- Uploaded File: ${fileName} ---\n${fileContent}`
+    : request;
 
   const encoder = new TextEncoder();
 
@@ -34,7 +64,7 @@ export async function POST(req: Request) {
               : turn.content;
             return [{ role: 'assistant', content: summary }];
           }),
-          { role: 'user', content: request },
+          { role: 'user', content: fullRequest },
         ];
 
         const orchestratorTools = buildOrchestratorTools();
