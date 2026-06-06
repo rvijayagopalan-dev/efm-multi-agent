@@ -7,7 +7,11 @@ import {
   getIndustryDomain,
   type IndustrySector,
   type IndustryDomain,
-  type KnowledgeGraph
+  type KnowledgeGraph,
+  type ExternalFactor,
+  type Trend,
+  type Disruption,
+  type StrategicImplication
 } from '@/lib/industry';
 
 interface IndustryPanelProps {
@@ -17,7 +21,7 @@ interface IndustryPanelProps {
 export default function IndustryPanel({ query }: IndustryPanelProps) {
   const [selectedSector, setSelectedSector] = useState<IndustrySector | null>(null);
   const [selectedDomain, setSelectedDomain] = useState<IndustryDomain | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'ontology' | 'knowledge-graph'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'ontology' | 'knowledge-graph' | 'forces' | 'strategy'>('overview');
   const [filteredSectors, setFilteredSectors] = useState<IndustrySector[]>(INDUSTRY_SECTORS);
 
   // Update filtered sectors based on query
@@ -126,10 +130,10 @@ export default function IndustryPanel({ query }: IndustryPanelProps) {
           {selectedDomain ? (
             <>
               {/* Tab bar */}
-              <div className="border-b border-slate-800 flex items-center gap-1 px-4 h-9 flex-shrink-0">
+              <div className="border-b border-slate-800 flex items-center gap-1 px-4 h-9 flex-shrink-0 overflow-x-auto">
                 <button
                   onClick={() => setActiveTab('overview')}
-                  className={`text-xs px-3 py-1 rounded-md transition-colors ${
+                  className={`text-xs px-3 py-1 rounded-md transition-colors whitespace-nowrap ${
                     activeTab === 'overview'
                       ? 'bg-slate-700 text-white'
                       : 'text-slate-500 hover:text-slate-300'
@@ -138,8 +142,28 @@ export default function IndustryPanel({ query }: IndustryPanelProps) {
                   Overview
                 </button>
                 <button
+                  onClick={() => setActiveTab('forces')}
+                  className={`text-xs px-3 py-1 rounded-md transition-colors whitespace-nowrap ${
+                    activeTab === 'forces'
+                      ? 'bg-slate-700 text-white'
+                      : 'text-slate-500 hover:text-slate-300'
+                  }`}
+                >
+                  External Forces
+                </button>
+                <button
+                  onClick={() => setActiveTab('strategy')}
+                  className={`text-xs px-3 py-1 rounded-md transition-colors whitespace-nowrap ${
+                    activeTab === 'strategy'
+                      ? 'bg-slate-700 text-white'
+                      : 'text-slate-500 hover:text-slate-300'
+                  }`}
+                >
+                  Strategy
+                </button>
+                <button
                   onClick={() => setActiveTab('ontology')}
-                  className={`text-xs px-3 py-1 rounded-md transition-colors ${
+                  className={`text-xs px-3 py-1 rounded-md transition-colors whitespace-nowrap ${
                     activeTab === 'ontology'
                       ? 'bg-slate-700 text-white'
                       : 'text-slate-500 hover:text-slate-300'
@@ -149,7 +173,7 @@ export default function IndustryPanel({ query }: IndustryPanelProps) {
                 </button>
                 <button
                   onClick={() => setActiveTab('knowledge-graph')}
-                  className={`text-xs px-3 py-1 rounded-md transition-colors ${
+                  className={`text-xs px-3 py-1 rounded-md transition-colors whitespace-nowrap ${
                     activeTab === 'knowledge-graph'
                       ? 'bg-slate-700 text-white'
                       : 'text-slate-500 hover:text-slate-300'
@@ -163,6 +187,12 @@ export default function IndustryPanel({ query }: IndustryPanelProps) {
               <div className="flex-1 overflow-y-auto">
                 {activeTab === 'overview' && (
                   <DomainOverview domain={selectedDomain} />
+                )}
+                {activeTab === 'forces' && (
+                  <ExternalForcesView domain={selectedDomain} />
+                )}
+                {activeTab === 'strategy' && (
+                  <StrategyView domain={selectedDomain} />
                 )}
                 {activeTab === 'ontology' && (
                   <OntologyView ontology={selectedDomain.ontology} />
@@ -348,6 +378,227 @@ function KnowledgeGraphView({ graph }: { graph: KnowledgeGraph }) {
             );
           })}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function ExternalForcesView({ domain }: { domain: IndustryDomain }) {
+  const { externalForces, trends, disruptions } = domain;
+
+  const impactColors: Record<string, string> = {
+    high: 'border-red-500/30 bg-red-500/10',
+    medium: 'border-yellow-500/30 bg-yellow-500/10',
+    low: 'border-green-500/30 bg-green-500/10'
+  };
+
+  const categoryColors: Record<string, string> = {
+    political: 'text-blue-400',
+    economic: 'text-green-400',
+    social: 'text-pink-400',
+    technological: 'text-purple-400',
+    environmental: 'text-emerald-400',
+    legal: 'text-amber-400'
+  };
+
+  return (
+    <div className="p-6 space-y-8">
+      {/* PESTEL Factors */}
+      <div>
+        <h3 className="text-lg font-bold text-white mb-4">External Forces (PESTEL)</h3>
+        <div className="space-y-6">
+          {Object.entries(externalForces).map(([category, factors]) => {
+            if (!factors || factors.length === 0) return null;
+            return (
+              <div key={category}>
+                <h4 className={`text-sm font-bold mb-3 capitalize ${categoryColors[category] || 'text-slate-400'}`}>
+                  {category}
+                </h4>
+                <div className="space-y-2">
+                  {factors.map((factor: ExternalFactor, i: number) => (
+                    <div key={i} className={`border rounded-lg p-3 ${impactColors[factor.impact] || 'border-slate-700/30 bg-slate-800/30'}`}>
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <div className="flex-1">
+                          <p className="font-semibold text-slate-200">{factor.name}</p>
+                          <p className="text-xs text-slate-400 mt-1">{factor.description}</p>
+                        </div>
+                        <div className="flex flex-col gap-1 text-right flex-shrink-0">
+                          <span className={`text-[10px] font-semibold ${factor.impact === 'high' ? 'text-red-400' : factor.impact === 'medium' ? 'text-yellow-400' : 'text-green-400'}`}>
+                            {factor.impact.toUpperCase()}
+                          </span>
+                          <span className="text-[10px] text-slate-500">{factor.trajectory}</span>
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-slate-500 mb-2">Timeline: {factor.timeframe}</p>
+                      {factor.implications && (
+                        <div className="text-[10px] text-slate-400">
+                          <p className="font-semibold mb-1">Implications:</p>
+                          <ul className="list-disc list-inside space-y-0.5">
+                            {factor.implications.map((imp: string, j: number) => (
+                              <li key={j}>{imp}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Trends */}
+      {trends && trends.length > 0 && (
+        <div>
+          <h3 className="text-lg font-bold text-white mb-4">Market Trends</h3>
+          <div className="space-y-3">
+            {trends.map((trend: Trend, i: number) => (
+              <div key={i} className="border border-blue-500/30 bg-blue-500/10 rounded-lg p-4">
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-slate-200">{trend.name}</h4>
+                    <p className="text-xs text-slate-400 mt-1">{trend.description}</p>
+                  </div>
+                  <div className="text-right text-[10px]">
+                    <p className="text-blue-400 font-semibold">{trend.momentum}</p>
+                    <p className="text-slate-500">{trend.horizon}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 mt-3">
+                  <div>
+                    <p className="text-[10px] font-semibold text-emerald-400 mb-1">Opportunities</p>
+                    <ul className="text-[10px] text-slate-400 space-y-0.5">
+                      {trend.opportunities.map((opp, j) => (
+                        <li key={j}>• {opp}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-semibold text-red-400 mb-1">Threats</p>
+                    <ul className="text-[10px] text-slate-400 space-y-0.5">
+                      {trend.threats.map((threat, j) => (
+                        <li key={j}>• {threat}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Disruptions */}
+      {disruptions && disruptions.length > 0 && (
+        <div>
+          <h3 className="text-lg font-bold text-white mb-4">Potential Disruptions</h3>
+          <div className="space-y-3">
+            {disruptions.map((disruption: Disruption, i: number) => (
+              <div key={i} className="border border-red-500/30 bg-red-500/10 rounded-lg p-4">
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-slate-200">{disruption.name}</h4>
+                    <p className="text-xs text-slate-400 mt-1">{disruption.description}</p>
+                  </div>
+                  <div className="text-right text-[10px] flex-shrink-0">
+                    <p className="text-red-400 font-semibold">{disruption.likelihood}</p>
+                    <p className="text-slate-500">{disruption.timeToImpact}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 mt-3">
+                  <div>
+                    <p className="text-[10px] font-semibold text-slate-300 mb-1">Mitigation</p>
+                    <ul className="text-[10px] text-slate-400 space-y-0.5">
+                      {disruption.mitigationStrategies.map((strat, j) => (
+                        <li key={j}>• {strat}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-semibold text-slate-300 mb-1">Winner Traits</p>
+                    <ul className="text-[10px] text-slate-400 space-y-0.5">
+                      {disruption.winnerCharacteristics.map((char, j) => (
+                        <li key={j}>• {char}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StrategyView({ domain }: { domain: IndustryDomain }) {
+  const { strategicImplications } = domain;
+
+  const priorityColors: Record<string, string> = {
+    critical: 'border-red-500/30 bg-red-500/10 text-red-400',
+    high: 'border-orange-500/30 bg-orange-500/10 text-orange-400',
+    medium: 'border-yellow-500/30 bg-yellow-500/10 text-yellow-400',
+    low: 'border-green-500/30 bg-green-500/10 text-green-400'
+  };
+
+  const investmentColors: Record<string, string> = {
+    high: 'text-red-400',
+    medium: 'text-yellow-400',
+    low: 'text-green-400'
+  };
+
+  return (
+    <div className="p-6 space-y-4">
+      <div className="mb-6">
+        <h3 className="text-lg font-bold text-white mb-2">Strategic Initiatives</h3>
+        <p className="text-sm text-slate-400">Key capability and investment priorities to address external forces</p>
+      </div>
+
+      <div className="space-y-4">
+        {strategicImplications && strategicImplications.map((implication: StrategicImplication, i: number) => (
+          <div key={i} className={`border rounded-lg p-4 ${priorityColors[implication.priority] || 'border-slate-700/30 bg-slate-800/30'}`}>
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div className="flex-1">
+                <h4 className="font-bold text-slate-100 text-sm">{implication.title}</h4>
+                <p className="text-xs text-slate-400 mt-1">{implication.description}</p>
+              </div>
+              <div className="flex flex-col gap-1 text-right flex-shrink-0">
+                <span className="text-[10px] font-semibold capitalize">{implication.priority}</span>
+                <span className="text-[10px] text-slate-500">{implication.timeline}</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3 text-[10px]">
+              <div>
+                <p className="font-semibold text-slate-300 mb-1">Required Capabilities</p>
+                <ul className="space-y-0.5 text-slate-400">
+                  {implication.requiredCapabilities.map((cap, j) => (
+                    <li key={j}>• {cap}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <p className="font-semibold text-slate-300 mb-1">Investment</p>
+                <p className={`font-semibold mb-2 ${investmentColors[implication.investmentRequired as keyof typeof investmentColors]}`}>
+                  {implication.investmentRequired.toUpperCase()}
+                </p>
+                <p className="font-semibold text-slate-300 mb-1">Related Forces</p>
+                <div className="space-y-0.5">
+                  {implication.relatedForces.slice(0, 2).map((force, j) => (
+                    <p key={j} className="text-slate-500">• {force}</p>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="font-semibold text-slate-300 mb-1">Expected ROI</p>
+                <p className="text-slate-400 text-[9px] leading-tight">{implication.expectedROI}</p>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
