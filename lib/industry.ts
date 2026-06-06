@@ -197,6 +197,32 @@ export interface StrategicRecommendation {
   estimatedROI: string;
 }
 
+export interface BusinessModelCanvas {
+  keyPartners: string[];
+  keyActivities: string[];
+  keyResources: string[];
+  valueProposition: string[];
+  customerRelationships: string[];
+  channels: string[];
+  customerSegments: string[];
+  costStructure: string[];
+  revenueStreams: string[];
+}
+
+export interface DynamicIndustryAnalysis {
+  query: string;
+  industry: string;
+  businessModel: BusinessModelCanvas;
+  externalForces: ExternalForces;
+  trends: Trend[];
+  disruptions: Disruption[];
+  strategicImplications: StrategicImplication[];
+  competitorAnalysis: CompetitorAnalysis[];
+  scenarios: Scenario[];
+  capabilities: CapabilityGap[];
+  riskAssessments: RiskAssessment[];
+}
+
 // Industry Data
 export const INDUSTRY_SECTORS: IndustrySector[] = [
   {

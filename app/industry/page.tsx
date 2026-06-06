@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import BusinessModelCanvas from '@/components/BusinessModelCanvas';
 import {
   INDUSTRY_SECTORS,
   searchIndustries,
@@ -8,14 +9,20 @@ import {
   type IndustryDomain,
   type ExternalFactor,
   type Trend,
+  type DynamicIndustryAnalysis,
+  type BusinessModelCanvas as BMC,
 } from '@/lib/industry';
 
 export default function IndustryPage() {
   const [query, setQuery] = useState('');
   const [selectedSector, setSelectedSector] = useState<IndustrySector | null>(null);
   const [selectedDomain, setSelectedDomain] = useState<IndustryDomain | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'forces' | 'trends' | 'scenarios' | 'risks' | 'capabilities' | 'competitors' | 'roadmap' | 'export'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'forces' | 'trends' | 'scenarios' | 'risks' | 'capabilities' | 'competitors' | 'roadmap' | 'canvas' | 'export'>('overview');
   const [filteredSectors, setFilteredSectors] = useState<IndustrySector[]>(INDUSTRY_SECTORS);
+  const [dynamicAnalysis, setDynamicAnalysis] = useState<DynamicIndustryAnalysis | null>(null);
+  const [customQuery, setCustomQuery] = useState('');
+  const [generating, setGenerating] = useState(false);
+  const [generatingText, setGeneratingText] = useState('');
 
   useEffect(() => {
     if (query.trim()) {
@@ -34,12 +41,60 @@ export default function IndustryPage() {
     }
   }, [query]);
 
+  const generateDynamicAnalysis = async () => {
+    if (!customQuery.trim()) return;
+
+    setGenerating(true);
+    setGeneratingText('');
+    setActiveTab('overview');
+
+    try {
+      const response = await fetch('/api/industry/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: customQuery }),
+      });
+
+      const reader = response.body?.getReader();
+      if (!reader) return;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const text = new TextDecoder().decode(value);
+        const lines = text.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.type === 'content_token') {
+                setGeneratingText(prev => prev + data.token);
+              } else if (data.type === 'complete' && data.data) {
+                setDynamicAnalysis(data.data);
+                setGeneratingText('');
+              }
+            } catch (e) {
+              // Ignore parse errors
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to generate analysis:', error);
+      setGeneratingText('');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-900 text-white">
       {/* Header */}
       <header className="border-b border-slate-800 bg-slate-800/50 backdrop-blur">
         <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-3 mb-6">
             <span className="text-4xl">🏢</span>
             <div>
               <h1 className="text-3xl font-bold">Industry Intelligence</h1>
@@ -47,14 +102,58 @@ export default function IndustryPage() {
             </div>
           </div>
 
-          {/* Search */}
-          <input
-            type="text"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="Search sectors or domains... (e.g., 'banking', '5G', 'autonomous vehicles')"
-            className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50"
-          />
+          {/* Two Input Options */}
+          <div className="space-y-3">
+            {/* Option 1: Search */}
+            <div>
+              <label className="text-xs font-semibold text-slate-400 mb-2 block">📚 Browse Pre-Built Industries</label>
+              <input
+                type="text"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Search sectors or domains... (e.g., 'banking', '5G', 'autonomous vehicles')"
+                className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+              />
+            </div>
+
+            {/* Option 2: Custom Query */}
+            <div>
+              <label className="text-xs font-semibold text-slate-400 mb-2 block">✨ Generate Custom Industry Analysis (AI-Powered)</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={customQuery}
+                  onChange={e => setCustomQuery(e.target.value)}
+                  onKeyPress={e => e.key === 'Enter' && generateDynamicAnalysis()}
+                  placeholder="Enter any industry, business idea, or domain... (e.g., 'sustainable fashion retail', 'AI-powered healthcare', 'quantum computing')"
+                  className="flex-1 bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  disabled={generating}
+                />
+                <button
+                  onClick={generateDynamicAnalysis}
+                  disabled={generating || !customQuery.trim()}
+                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-slate-600 disabled:to-slate-700 text-white font-semibold rounded-lg transition-all flex items-center gap-2"
+                >
+                  {generating ? (
+                    <>
+                      <span className="animate-spin">⚙️</span>
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <span>✨</span>
+                      Generate
+                    </>
+                  )}
+                </button>
+              </div>
+              {generatingText && (
+                <div className="mt-2 text-xs text-blue-400 p-3 bg-blue-500/10 rounded border border-blue-500/20 max-h-24 overflow-y-auto">
+                  {generatingText}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </header>
 
@@ -118,12 +217,27 @@ export default function IndustryPage() {
 
           {/* Main Content Area */}
           <main className="col-span-3">
-            {selectedDomain ? (
+            {dynamicAnalysis || selectedDomain ? (
               <>
-                {/* Domain Header */}
+                {/* Domain/Analysis Header */}
                 <div className="mb-6">
-                  <h2 className="text-2xl font-bold text-white mb-2">{selectedDomain.name}</h2>
-                  <p className="text-slate-400 text-sm">{selectedDomain.description}</p>
+                  <h2 className="text-2xl font-bold text-white mb-2">
+                    {dynamicAnalysis ? dynamicAnalysis.industry : selectedDomain?.name}
+                  </h2>
+                  {dynamicAnalysis && (
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded border border-blue-500/30">AI-Generated Analysis</span>
+                      <button
+                        onClick={() => setDynamicAnalysis(null)}
+                        className="text-xs text-slate-500 hover:text-slate-300 transition-colors"
+                      >
+                        ✕ Clear
+                      </button>
+                    </div>
+                  )}
+                  <p className="text-slate-400 text-sm">
+                    {dynamicAnalysis ? 'Custom AI-generated industry intelligence' : selectedDomain?.description}
+                  </p>
                 </div>
 
                 {/* Tab Bar */}
@@ -131,6 +245,7 @@ export default function IndustryPage() {
                   <div className="flex gap-2">
                     {[
                       { id: 'overview', label: '📋 Overview' },
+                      { id: 'canvas', label: '🎨 Canvas' },
                       { id: 'forces', label: '🌍 Forces' },
                       { id: 'trends', label: '📈 Trends' },
                       { id: 'scenarios', label: '🎯 Scenarios' },
@@ -157,15 +272,16 @@ export default function IndustryPage() {
 
                 {/* Content */}
                 <div className="bg-slate-800/30 border border-slate-700 rounded-lg p-6">
-                  {activeTab === 'overview' && <OverviewTab domain={selectedDomain} />}
-                  {activeTab === 'forces' && <ForcesTab domain={selectedDomain} />}
-                  {activeTab === 'trends' && <TrendsTab domain={selectedDomain} />}
-                  {activeTab === 'scenarios' && <ScenariosTab domain={selectedDomain} />}
-                  {activeTab === 'risks' && <RisksTab domain={selectedDomain} />}
-                  {activeTab === 'capabilities' && <CapabilitiesTab domain={selectedDomain} />}
-                  {activeTab === 'competitors' && <CompetitorsTab domain={selectedDomain} />}
-                  {activeTab === 'roadmap' && <RoadmapTab domain={selectedDomain} />}
-                  {activeTab === 'export' && <ExportTab domain={selectedDomain} />}
+                  {activeTab === 'overview' && (dynamicAnalysis ? <OverviewTabDynamic data={dynamicAnalysis} /> : <OverviewTab domain={selectedDomain!} />)}
+                  {activeTab === 'canvas' && (dynamicAnalysis ? <BusinessModelCanvas canvas={dynamicAnalysis.businessModel} /> : selectedDomain ? <BusinessModelCanvasPlaceholder /> : null)}
+                  {activeTab === 'forces' && (dynamicAnalysis ? <ForcesTabDynamic forces={dynamicAnalysis.externalForces} /> : <ForcesTab domain={selectedDomain!} />)}
+                  {activeTab === 'trends' && (dynamicAnalysis ? <TrendsTabDynamic trends={dynamicAnalysis.trends} /> : <TrendsTab domain={selectedDomain!} />)}
+                  {activeTab === 'scenarios' && <ScenariosTab domain={selectedDomain!} />}
+                  {activeTab === 'risks' && <RisksTab domain={selectedDomain!} />}
+                  {activeTab === 'capabilities' && <CapabilitiesTab domain={selectedDomain!} />}
+                  {activeTab === 'competitors' && <CompetitorsTab domain={selectedDomain!} />}
+                  {activeTab === 'roadmap' && <RoadmapTab domain={selectedDomain!} />}
+                  {activeTab === 'export' && <ExportTab domain={selectedDomain!} />}
                 </div>
               </>
             ) : (
@@ -545,6 +661,105 @@ function RoadmapTab({ domain }: { domain: IndustryDomain }) {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function BusinessModelCanvasPlaceholder() {
+  return (
+    <div className="text-center py-12">
+      <p className="text-slate-500 text-sm">Business Model Canvas not available for this domain</p>
+      <p className="text-slate-600 text-xs mt-2">Use AI-generated analysis to see the Business Canvas</p>
+    </div>
+  );
+}
+
+function OverviewTabDynamic({ data }: { data: DynamicIndustryAnalysis }) {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-bold mb-3">Industry Overview</h3>
+        <p className="text-sm text-slate-300 mb-4">{data.industry}</p>
+      </div>
+      <div>
+        <h3 className="text-lg font-bold mb-3">Strategic Implications</h3>
+        <div className="space-y-3">
+          {data.strategicImplications.map((impl, i) => (
+            <div key={i} className="bg-slate-700/30 border border-slate-600 rounded-lg p-3">
+              <h4 className="font-semibold text-orange-400 mb-1 text-sm">{impl.title}</h4>
+              <p className="text-xs text-slate-400">{impl.description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ForcesTabDynamic({ forces }: { forces: any }) {
+  return (
+    <div className="space-y-4">
+      {Object.entries(forces).map(([category, items]: [string, any]) => {
+        if (!items || items.length === 0) return null;
+        return (
+          <div key={category}>
+            <h4 className="text-sm font-bold text-orange-400 mb-2 capitalize">{category}</h4>
+            <div className="space-y-2">
+              {items.map((item: any, i: number) => (
+                <div key={i} className="bg-slate-700/30 border border-slate-600 rounded p-3">
+                  <div className="flex justify-between items-start mb-2">
+                    <h5 className="font-semibold text-slate-200 text-sm">{item.name}</h5>
+                    <span className={`text-xs font-semibold ${
+                      item.impact === 'high' ? 'text-red-400' : item.impact === 'medium' ? 'text-yellow-400' : 'text-green-400'
+                    }`}>
+                      {item.impact?.toUpperCase() || 'MEDIUM'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400">{item.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function TrendsTabDynamic({ trends }: { trends: Trend[] }) {
+  return (
+    <div className="space-y-4">
+      {trends && trends.length > 0 ? (
+        trends.map((trend, i) => (
+          <div key={i} className="bg-slate-700/30 border border-blue-500/30 rounded-lg p-4">
+            <div className="flex justify-between items-start mb-2">
+              <h4 className="font-semibold text-blue-400">{trend.name}</h4>
+              <span className="text-xs text-slate-400">{trend.horizon}</span>
+            </div>
+            <p className="text-xs text-slate-400 mb-3">{trend.description}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-[10px] font-semibold text-emerald-400 mb-1">Opportunities</p>
+                <ul className="text-[10px] text-slate-400 space-y-0.5">
+                  {trend.opportunities.map((opp, j) => (
+                    <li key={j}>• {opp}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold text-red-400 mb-1">Threats</p>
+                <ul className="text-[10px] text-slate-400 space-y-0.5">
+                  {trend.threats.map((threat, j) => (
+                    <li key={j}>• {threat}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        ))
+      ) : (
+        <p className="text-slate-500 text-sm">No trend data available</p>
+      )}
     </div>
   );
 }
