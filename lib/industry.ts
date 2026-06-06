@@ -138,6 +138,65 @@ export interface ScenarioAnalysis {
   requiredInvestments: string[];
 }
 
+export interface Scenario {
+  id: string;
+  name: string;
+  description: string;
+  probability: 'high' | 'medium' | 'low';
+  horizon: 'near-term' | 'mid-term' | 'long-term';
+  drivingForces: string[];
+  strategicActions: string[];
+  investments: string[];
+  successMetrics: string[];
+}
+
+export interface RiskAssessment {
+  id: string;
+  name: string;
+  impact: number; // 1-5
+  likelihood: number; // 1-5
+  category: string;
+  mitigationActions: string[];
+}
+
+export interface CapabilityGap {
+  name: string;
+  current: number; // 1-5 maturity level
+  required: number; // 1-5
+  gap: number;
+  developmentPlan: string[];
+  estimatedTimeframe: string;
+}
+
+export interface CompetitorAnalysis {
+  competitor: string;
+  strengths: string[];
+  weaknesses: string[];
+  strategicFocus: string[];
+  capabilities: Record<string, number>; // capability -> maturity (1-5)
+}
+
+export interface ImplementationPhase {
+  phase: number;
+  name: string;
+  duration: string;
+  initiatives: string[];
+  milestones: string[];
+  investment: string;
+  expectedOutcome: string;
+}
+
+export interface StrategicRecommendation {
+  id: string;
+  title: string;
+  rationale: string;
+  relatedForces: string[];
+  priority: number; // 1-10
+  expectedImpact: string;
+  implementationComplexity: 'low' | 'medium' | 'high';
+  estimatedROI: string;
+}
+
 // Industry Data
 export const INDUSTRY_SECTORS: IndustrySector[] = [
   {

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import TopNavigation from "@/components/TopNavigation";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "EFM Agentic AI — Agentic AI Architecture Generator",
-  description: "Generate complete Agentic AI Architecture across all 33 enterprise domains and excellence frameworks.",
+  title: "EFM Agentic AI — Enterprise Architecture & Industry Intelligence",
+  description: "Multi-agent orchestration for enterprise architecture with industry intelligence, external forces analysis, and strategic planning.",
 };
 
 export default function RootLayout({
@@ -27,7 +28,10 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col bg-slate-900 text-white">
+        <TopNavigation />
+        {children}
+      </body>
     </html>
   );
 }
