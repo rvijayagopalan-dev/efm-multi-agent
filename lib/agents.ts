@@ -1311,6 +1311,53 @@ export const AGENT_DEFINITIONS: AgentDefinition[] = [
     ),
     tools: baseTools('Serverless Architecture'),
   },
+
+  {
+    id: 'industry-analyst',
+    name: 'Industry & Market Analysis Agent',
+    groupId: 'governance',
+    icon: '🏢',
+    expertise: 'Industry sectors, business models, ontologies, market analysis, competitive positioning, domain expertise',
+    systemPrompt: agentPrompt(
+      'Industry & Market Analysis Agent',
+      'Industry sector analysis, business model design, market landscape assessment, competitive positioning, domain ontologies, and knowledge graph generation for enterprise strategy',
+      [
+        'Identify relevant industry sectors and domains based on organizational context and business objectives',
+        'Analyze business models within sectors (direct, marketplace, platform, subscription models)',
+        'Map industry ontologies with entities, relationships, and properties for knowledge representation',
+        'Generate knowledge graphs showing ecosystem dynamics, stakeholder relationships, and value flows',
+        'Assess competitive positioning and market opportunities within identified domains',
+        'Create industry-specific architectural patterns and best practices recommendations',
+      ],
+      [
+        'Industry sector identification and domain mapping',
+        'Business model analysis and competitive landscape',
+        'Ontology visualization with entities and relationships',
+        'Knowledge graph showing ecosystem and value flows',
+        'Market opportunities and positioning recommendations',
+        'Industry-specific architectural patterns and case studies',
+      ],
+      'Porter\'s Five Forces, Business Model Canvas, Industry 4.0, Vertical SaaS patterns, Market segmentation'
+    ),
+    tools: [
+      ...baseTools('Industry & Market Analysis'),
+      baseTool('analyze_industry_sectors',
+        'Analyze relevant industry sectors for the given business context',
+        { business_context: 'Description of business, products, services, and target market' }),
+      baseTool('explore_business_models',
+        'Explore and compare business models within identified domains',
+        { domain: 'Industry domain to analyze', focus: 'Specific aspect: direct-to-consumer, platform, subscription, etc.' }),
+      baseTool('map_ontologies',
+        'Map domain ontologies with entities, relationships, and properties',
+        { domain: 'Domain to analyze', depth: 'Analysis depth: shallow, standard, or deep' }),
+      baseTool('generate_knowledge_graph',
+        'Generate knowledge graphs showing ecosystem relationships and value flows',
+        { domain: 'Domain to analyze', focus: 'Focus area: stakeholders, technology, value chain, etc.' }),
+      baseTool('assess_competitive_positioning',
+        'Assess competitive positioning and market opportunities',
+        { sector: 'Industry sector', focus_area: 'Area of focus: technology, pricing, distribution, etc.' }),
+    ],
+  },
 ];
 
 // ── Lookup map ────────────────────────────────────────────────────────────────

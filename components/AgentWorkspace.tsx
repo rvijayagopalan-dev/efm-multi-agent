@@ -7,6 +7,7 @@ import { downloadAsPdf, downloadAsWord } from '@/lib/export';
 import DiagramPanel from '@/components/DiagramPanel';
 import DownloadsPanel from '@/components/DownloadsPanel';
 import ObservabilityPanel from '@/components/ObservabilityPanel';
+import IndustryPanel from '@/components/IndustryPanel';
 import { ObservabilityCollector, type MetricsSnapshot } from '@/lib/observability';
 import type { AgentInvocation } from '@/lib/diagrams';
 
@@ -52,7 +53,7 @@ export default function AgentWorkspace() {
   const [running, setRunning]         = useState(false);
   const [log, setLog]                 = useState<LogEntry[]>([]);
   const [agentStatuses, setAgentStatuses] = useState<Record<string, AgentStatus>>({});
-  const [activePanel, setActivePanel] = useState<'log' | 'output' | 'diagrams' | 'downloads' | 'observability'>('log');
+  const [activePanel, setActivePanel] = useState<'log' | 'output' | 'diagrams' | 'downloads' | 'observability' | 'industry'>('log');
   const [finalOutput, setFinalOutput] = useState('');
   const [history, setHistory]         = useState<ConversationTurn[]>([]);
   const [agentOutputs, setAgentOutputs] = useState<AgentOutput[]>([]);
@@ -601,6 +602,10 @@ export default function AgentWorkspace() {
             className={`text-xs px-3 py-1 rounded-md transition-colors ${activePanel === 'observability' ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-slate-300'}`}>
             Observability {metrics && !running && <span className="ml-1 text-[10px] text-cyan-400">📊</span>}
           </button>
+          <button onClick={() => setActivePanel('industry')}
+            className={`text-xs px-3 py-1 rounded-md transition-colors ${activePanel === 'industry' ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-slate-300'}`}>
+            Industry {lastRequest && !running && <span className="ml-1 text-[10px] text-amber-400">🏢</span>}
+          </button>
           {finalOutput && !running && (
             <div className="ml-auto flex items-center gap-2">
               <button onClick={copyOutput} className="text-[10px] px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-400 rounded transition-colors">{copied ? 'Copied!' : 'Copy'}</button>
@@ -650,6 +655,10 @@ export default function AgentWorkspace() {
         ) : activePanel === 'downloads' ? (
           <div className="flex-1 overflow-hidden">
             <DownloadsPanel finalOutput={finalOutput} agentOutputs={agentOutputs} />
+          </div>
+        ) : activePanel === 'industry' ? (
+          <div className="flex-1 overflow-hidden">
+            <IndustryPanel query={request || lastRequest} />
           </div>
         ) : (
           <div className="flex-1 overflow-hidden">
