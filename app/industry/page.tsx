@@ -276,12 +276,12 @@ export default function IndustryPage() {
                   {activeTab === 'canvas' && (dynamicAnalysis ? <BusinessModelCanvas canvas={dynamicAnalysis.businessModel} /> : selectedDomain ? <BusinessModelCanvasPlaceholder /> : null)}
                   {activeTab === 'forces' && (dynamicAnalysis ? <ForcesTabDynamic forces={dynamicAnalysis.externalForces} /> : <ForcesTab domain={selectedDomain!} />)}
                   {activeTab === 'trends' && (dynamicAnalysis ? <TrendsTabDynamic trends={dynamicAnalysis.trends} /> : <TrendsTab domain={selectedDomain!} />)}
-                  {activeTab === 'scenarios' && <ScenariosTab domain={selectedDomain!} />}
-                  {activeTab === 'risks' && <RisksTab domain={selectedDomain!} />}
-                  {activeTab === 'capabilities' && <CapabilitiesTab domain={selectedDomain!} />}
-                  {activeTab === 'competitors' && <CompetitorsTab domain={selectedDomain!} />}
+                  {activeTab === 'scenarios' && (dynamicAnalysis ? <ScenariosTabDynamic disruptions={dynamicAnalysis.disruptions} /> : <ScenariosTab domain={selectedDomain!} />)}
+                  {activeTab === 'risks' && (dynamicAnalysis ? <RisksTabDynamic risks={dynamicAnalysis.riskAssessments} /> : <RisksTab domain={selectedDomain!} />)}
+                  {activeTab === 'capabilities' && (dynamicAnalysis ? <CapabilitiesTabDynamic gaps={dynamicAnalysis.capabilities} /> : <CapabilitiesTab domain={selectedDomain!} />)}
+                  {activeTab === 'competitors' && (dynamicAnalysis ? <CompetitorsTabDynamic competitors={dynamicAnalysis.competitorAnalysis} /> : <CompetitorsTab domain={selectedDomain!} />)}
                   {activeTab === 'roadmap' && <RoadmapTab domain={selectedDomain!} />}
-                  {activeTab === 'export' && <ExportTab domain={selectedDomain!} />}
+                  {activeTab === 'export' && <ExportTab domain={dynamicAnalysis ? undefined : selectedDomain!} query={dynamicAnalysis?.query} />}
                 </div>
               </>
             ) : (
@@ -764,7 +764,170 @@ function TrendsTabDynamic({ trends }: { trends: Trend[] }) {
   );
 }
 
-function ExportTab({ domain }: { domain: IndustryDomain }) {
+function ScenariosTabDynamic({ disruptions }: { disruptions: any[] }) {
+  return (
+    <div className="space-y-4">
+      {disruptions && disruptions.length > 0 ? (
+        disruptions.map((disruption, i) => (
+          <div key={i} className="bg-slate-700/30 border border-amber-500/30 rounded-lg p-4">
+            <div className="flex justify-between items-start mb-2">
+              <h4 className="font-semibold text-amber-400">{disruption.name}</h4>
+              <span className={`text-xs font-semibold px-2 py-1 rounded ${
+                disruption.likelihood === 'high' ? 'bg-red-500/20 text-red-400' :
+                disruption.likelihood === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                'bg-green-500/20 text-green-400'
+              }`}>
+                {disruption.likelihood?.toUpperCase() || 'MEDIUM'}
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 mb-3">{disruption.description}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-[10px] font-semibold text-slate-300 mb-1">Impact</p>
+                <p className="text-[10px] text-slate-400">{disruption.timeToImpact || 'TBD'}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold text-slate-300 mb-1">Source</p>
+                <p className="text-[10px] text-slate-400">{disruption.source || 'Market'}</p>
+              </div>
+            </div>
+            {disruption.mitigationStrategies && (
+              <div className="mt-3">
+                <p className="text-[10px] font-semibold text-slate-300 mb-1">Mitigation</p>
+                <ul className="text-[10px] text-slate-400 space-y-0.5">
+                  {disruption.mitigationStrategies.map((strategy: string, j: number) => (
+                    <li key={j}>• {strategy}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        ))
+      ) : (
+        <p className="text-slate-500 text-sm">No disruption data available</p>
+      )}
+    </div>
+  );
+}
+
+function RisksTabDynamic({ risks }: { risks: any[] }) {
+  return (
+    <div className="space-y-4">
+      {risks && risks.length > 0 ? (
+        risks.map((risk, i) => {
+          const severity = (risk.impact || 3) * (risk.likelihood || 3);
+          const color = severity > 12 ? 'bg-red-500/20 border-red-500/30' : severity > 6 ? 'bg-yellow-500/20 border-yellow-500/30' : 'bg-green-500/20 border-green-500/30';
+          return (
+            <div key={i} className={`${color} border rounded-lg p-3`}>
+              <div className="flex items-start justify-between mb-2">
+                <h4 className="font-semibold text-slate-200 text-sm">{risk.name}</h4>
+                <div className="text-right">
+                  <div className="text-[10px] text-slate-400">Impact: {risk.impact || 3}/5 | Likelihood: {risk.likelihood || 3}/5</div>
+                  <div className="text-xs font-bold text-slate-300">Score: {severity}/25</div>
+                </div>
+              </div>
+              {risk.mitigationActions && (
+                <p className="text-xs text-slate-400">Mitigation: {risk.mitigationActions.join(', ')}</p>
+              )}
+            </div>
+          );
+        })
+      ) : (
+        <p className="text-slate-500 text-sm">No risk data available</p>
+      )}
+    </div>
+  );
+}
+
+function CapabilitiesTabDynamic({ gaps }: { gaps: any[] }) {
+  return (
+    <div className="space-y-4">
+      {gaps && gaps.length > 0 ? (
+        gaps.map((gap, i) => {
+          const gapSize = (gap.required || 4) - (gap.current || 2);
+          return (
+            <div key={i} className="bg-slate-700/30 border border-slate-600 rounded-lg p-3">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-semibold text-slate-200 text-sm">{gap.name}</h4>
+                <span className="text-xs text-slate-400">Gap: {gapSize} levels</span>
+              </div>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <p className="text-[10px] text-slate-500 mb-1">Current: {gap.current || 0}/5</p>
+                  <div className="w-full bg-slate-600 rounded h-2">
+                    <div className="bg-blue-500 h-full rounded" style={{ width: `${((gap.current || 0) / 5) * 100}%` }} />
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <p className="text-[10px] text-slate-500 mb-1">Required: {gap.required || 4}/5</p>
+                  <div className="w-full bg-slate-600 rounded h-2">
+                    <div className="bg-orange-500 h-full rounded" style={{ width: `${((gap.required || 4) / 5) * 100}%` }} />
+                  </div>
+                </div>
+              </div>
+              {gap.developmentPlan && (
+                <div className="mt-2">
+                  <p className="text-[10px] font-semibold text-slate-300 mb-1">Development Plan</p>
+                  <ul className="text-[10px] text-slate-400 space-y-0.5">
+                    {gap.developmentPlan.map((plan: string, j: number) => (
+                      <li key={j}>• {plan}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          );
+        })
+      ) : (
+        <p className="text-slate-500 text-sm">No capability data available</p>
+      )}
+    </div>
+  );
+}
+
+function CompetitorsTabDynamic({ competitors }: { competitors: any[] }) {
+  return (
+    <div className="space-y-4">
+      {competitors && competitors.length > 0 ? (
+        competitors.map((competitor, i) => (
+          <div key={i} className="bg-slate-700/30 border border-slate-600 rounded-lg p-4">
+            <h4 className="font-semibold text-slate-200 mb-3">{competitor.competitor || `Competitor ${i + 1}`}</h4>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <p className="text-[10px] font-semibold text-emerald-400 mb-1">Strengths</p>
+                <ul className="text-xs text-slate-400 space-y-0.5">
+                  {competitor.strengths && competitor.strengths.map((s: string, j: number) => (
+                    <li key={j}>• {s}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold text-red-400 mb-1">Weaknesses</p>
+                <ul className="text-xs text-slate-400 space-y-0.5">
+                  {competitor.weaknesses && competitor.weaknesses.map((w: string, j: number) => (
+                    <li key={j}>• {w}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold text-blue-400 mb-1">Focus</p>
+                <ul className="text-xs text-slate-400 space-y-0.5">
+                  {competitor.strategicFocus && competitor.strategicFocus.map((f: string, j: number) => (
+                    <li key={j}>• {f}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        ))
+      ) : (
+        <p className="text-slate-500 text-sm">No competitor data available</p>
+      )}
+    </div>
+  );
+}
+
+function ExportTab({ domain, query }: { domain?: IndustryDomain; query?: string }) {
   const handleExport = (format: 'pdf' | 'json' | 'markdown') => {
     // Placeholder for export functionality
     alert(`Export to ${format.toUpperCase()} - Coming soon`);
@@ -807,18 +970,34 @@ function ExportTab({ domain }: { domain: IndustryDomain }) {
         <div className="bg-slate-700/30 border border-slate-600 rounded-lg p-4">
           <p className="text-sm text-slate-400 mb-3">Copy this URL to share with team members:</p>
           <div className="bg-slate-700/50 rounded px-3 py-2 text-xs text-slate-300 break-all">
-            {`${typeof window !== 'undefined' ? window.location.origin : ''}/industry?sector=${domain.id}`}
+            {query
+              ? `${typeof window !== 'undefined' ? window.location.origin : ''}/industry?query=${encodeURIComponent(query)}`
+              : `${typeof window !== 'undefined' ? window.location.origin : ''}/industry?sector=${domain?.id || ''}`}
           </div>
+          {query && (
+            <p className="text-xs text-slate-500 mt-2">🔄 Others can regenerate the analysis with the same query</p>
+          )}
         </div>
       </div>
 
       <div>
-        <h3 className="text-lg font-bold mb-4">AI-Powered Insights</h3>
-        <button className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-3 rounded-lg transition-all flex items-center justify-center gap-2">
-          <span>✨</span>
-          Generate Strategic Recommendations
-        </button>
-        <p className="text-xs text-slate-400 mt-2">AI agent will analyze all data and provide personalized recommendations</p>
+        <h3 className="text-lg font-bold mb-4">Analysis Details</h3>
+        <div className="bg-slate-700/30 border border-slate-600 rounded-lg p-4 space-y-2">
+          <div className="flex justify-between">
+            <span className="text-xs text-slate-400">Type:</span>
+            <span className="text-xs text-slate-300">{query ? 'AI-Generated' : 'Pre-Built'}</span>
+          </div>
+          {query && (
+            <div className="flex justify-between">
+              <span className="text-xs text-slate-400">Query:</span>
+              <span className="text-xs text-slate-300">{query}</span>
+            </div>
+          )}
+          <div className="flex justify-between">
+            <span className="text-xs text-slate-400">Generated:</span>
+            <span className="text-xs text-slate-300">{new Date().toLocaleDateString()}</span>
+          </div>
+        </div>
       </div>
     </div>
   );
